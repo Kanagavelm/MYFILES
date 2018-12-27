@@ -1,0 +1,229 @@
+﻿
+
+"/etc/hosts" file must contain a fully qualified name for the server.
+
+127.0.0.1       localhost
+# Public
+192.168.2.141    rac1.localdomain         rac1
+192.168.2.142    rac2.localdomain         rac2
+# Private
+10.0.0.41    	rac1-priv.localdomain    rac1-priv
+10.0.0.42	  	rac2-priv.localdomain	 rac2-priv
+# Virtual
+192.168.2.143    rac1-vip.localdomain     rac1-vip
+192.168.2.144    rac2-vip.localdomain     rac2-vip
+# SCAN
+192.168.2.145    rac-scan.localdomain         rac-scan
+192.168.2.146    rac-scan.localdomain         rac-scan
+192.168.2.147    rac-scan.localdomain         rac-scan
+
+
+"/etc/sysctl.conf" file.
+
+kernel.shmmax = 4398046511104	
+kernel.shmall = 1073741824	 
+net.core.wmem_max = 3145728	 
+net.core.rmem_max = 4194304	 
+net.ipv4.ip_local_port_range = 9000 65500	 
+fs.file-max = 6815744	 
+fs.aio-max-nr = 3145728	 
+net.core.wmem_default = 262144	 
+net.core.rmem_default = 262144	 
+kernel.shmmni = 4096	 
+kernel.sem = 250 32000 100 128	 
+kernel.msgmnb = 65536	 
+kernel.sysrq = 1	 
+kernel.msgmax = 65536
+kernel.panic_on_oops = 1
+net.ipv4.conf.em2.rp_filter = 2
+net.ipv4.conf.em1.rp_filter = 1
+
+
+"/etc/security/limits.conf" file.
+
+* hard memlock 50000000	 
+* hard nofile 131072	 
+* soft nofile 131072
+* hard stack 32768	 
+* soft stack 10240	 
+* soft nproc 131072	 
+* soft memlock 50000000
+* hard core unlimited	 
+* soft core unlimited	 
+* hard nproc 131072
+
+
+"/etc/pam.d/login" file
+
+session    required     pam_limits.so
+
+
+packages are listed as required
+
+rpm -Uvh bc-1.06.95-1.el6.x86_64.rpm
+rpm -Uvh bind-utils-9.8.2-0.30.rc1.el6.x86_64.rpm
+rpm -Uvh binutils-2.20.51.0.2-5.42.el6.x86_64.rpm
+rpm -Uvh compat-libstdc++-296-2.96-144.el6.i686.rpm
+rpm -Uvh compat-libstdc++-33-3.2.3-69.el6.x86_64.rpm
+rpm -Uvh elfutils-libelf-0.158-3.2.el6.i686.rpm
+rpm -Uvh ethtool-3.5-5.el6.x86_64.rpm
+rpm -Uvh gcc-4.4.7-11.el6.x86_64.rpm
+rpm -Uvh gcc-c++-4.4.7-11.el6.x86_64.rpm
+rpm -Uvh gdb-7.2-75.el6.x86_64.rpm
+rpm -Uvh glibc-2.12-1.149.i686.rpm
+rpm -Uvh glibc-2.12-1.149.x86_64.rpm
+rpm -Uvh glibc-common-2.12-1.149.x86_64.rpm
+rpm -Uvh glibc-devel-2.12-1.149.i686.rpm
+rpm -Uvh glibc-devel-2.12-1.149.x86_64.rpm
+rpm -Uvh glibc-headers-2.12-1.149.el6.x86_64.rpm
+rpm -Uvh initscripts-9.03.46-1.0.2.el6.x86_64.rpm
+rpm -Uvh ksh-20120801-21.el6.x86_64.rpm
+rpm -Uvh libICE-1.0.6-1.el6.x86_64.rpm
+rpm -Uvh libSM-1.2.1-2.el6.x86_64.rpm
+rpm -Uvh libXp-1.0.2-2.1.el6.x86_64.rpm
+rpm -Uvh libXt-1.1.4-6.1.el6.x86_64.rpm
+rpm -Uvh libXtst-1.2.2-2.1.el6.x86_64.rpm
+rpm -Uvh libaio-0.3.107-10.el6.i686.rpm
+rpm -Uvh libaio-0.3.107-10.el6.x86_64.rpm
+rpm -Uvh libaio-devel-0.3.107-10.el6.x86_64.rpm
+rpm -Uvh libgcc-4.4.7-11.el6.i686.rpm
+rpm -Uvh libgcc-4.4.7-11.el6.x86_64.rpm
+rpm -Uvh libstdc++-4.4.7-11.el6.i686.rpm
+rpm -Uvh libstdc++-4.4.7-11.el6.x86_64.rpm
+rpm -Uvh libstdc++-devel--4.4.7-11.el6.i686.rpm
+rpm -Uvh make-3.81-20.el6.x86_64.rpm
+rpm -Uvh pam-1.1.1-20.el6.x86_64.rpm
+rpm -Uvh procps-3.2.8-30.0.1.el6.x86_64.rpm
+rpm -Uvh sysstat-9.0.4-27.el6.x86_64.rpm
+rpm -Uvh unixODBC-2.2.14-14.el6.x86_64.rpm
+rpm -Uvh unixODBC-devel-2.2.14-14.el6.x86_64.rpm
+rpm -Uvh util-linux-ng-2.17.2-12.18.0.1.el6.x86_64.rpm
+rpm -Uvh xorg-x11-utils-7.5-6.el6.x86_64.rpm
+rpm -Uvh xorg-x11-xinit-1.0.9-14.el6.x86_64.rpm
+
+
+Create the new groups and users.
+
+groupadd -g 54321 oinstall
+groupadd -g 54322 dba
+groupadd -g 54323 oper
+groupadd -g 54327 asmdba
+groupadd -g 54328 asmoper
+groupadd -g 54329 asmadmin
+
+useradd -u 54321 -g oinstall -G dba,oper,asmadmin,asmdba,asmoper grid
+passwd grid
+
+useradd -g oinstall -G dba,oper,asmadmin,asmdba,asmoper oracle
+passwd oracle
+
+# vi /etc/selinux/config
+SELINUX=diabled
+
+Once the change is complete, restart the server or run the following command.
+
+# setenforce disabled
+
+# service iptables stop
+# chkconfig iptables off
+
+# service ip6tables stop
+# chkconfig ip6tables off
+
+NTP
+
+# service ntpd stop                                  
+# chkconfig ntpd off
+# mv /etc/ntp.conf /etc/ntp.conf.bak
+
+
+# vi /etc/sysconfig/network
+
+NOZEROCONF=yes
+
+Create the directories in which the Oracle software will be installed.
+
+Check the status of NetworkManager:
+# chkconfig –-list | grep NetworkManager
+NetworkManager 0:off 1:off 2:off 3:off 4:off 5:off 6:off
+
+Disable NetworkManager:
+# service NetworkManager stop
+# chkconfig NetworkManager off
+
+
+For grid install 
+mkdir -p /u01/12.1.0/grid
+mkdir -p /u01/app/grid 
+chown -R grid:oinstall /u01
+chmod -R 775 /u01/
+
+For database install 
+mkdir -p /u01/app/oracle/product/12.1.0/db_1 
+chown -R oracle:oinstall /u01/app/oracle/product/12.1.0/db_1 
+chmod -R 775 /u01 
+
+Verify the Oracle ASM Configuration File
+
+[root@rac1 /]# rpm -qa |grep oracleasm
+oracleasm-support-2.1.8-1.el6.x86_64
+kmod-oracleasm-2.0.8-4.el6_6.x86_64
+oracleasmlib-2.0.4-1.el6.x86_64
+
+Configure ASMLib using the following command:
+# /usr/sbin/oracleasm configure -i
+
+Default user to own the driver interface []: grid
+Default group to own the driver interface []: asmadmin
+Start Oracle ASM library driver on boot (y/n) [ n ]: y
+Scan for Oracle ASM disks on boot (y/n) [y]: y
+Writing Oracle ASM library driver configuration: done
+
+/etc/sysconfig/oracleasm
+
+# ORACLEASM_SCANORDER: Matching patterns to order disk scanning
+ORACLEASM_SCANORDER="dm"
+# ORACLEASM_SCANEXCLUDE: Matching patterns to exclude disks from scan
+ORACLEASM_SCANEXCLUDE="sd"
+
+# /etc/init.d/oracleasm enable
+
+# /usr/sbin/oracleasm createdisk DATA1 /dev/mapper/
+# /usr/sbin/oracleasm scandisks
+# /usr/sbin/oracleasm listdisks
+
+
+Login as the Grid User and add the lines at the end of the ".bash_profile" file
+
+# Grid Settings 
+TMP=/tmp; export TMP 
+TMPDIR=$TMP; export TMPDIR 
+ORACLE_HOSTNAME=rac1.localdomain; export ORACLE_HOSTNAME 
+ORACLE_BASE=/u01/app/grid; export ORACLE_BASE 
+ORACLE_HOME=/u01/12.1.0/grid; export ORACLE_HOME 
+ORACLE_SID=+ASM1; export ORACLE_SID 
+PATH=/usr/sbin:$PATH; export PATH 
+PATH=$ORACLE_HOME/bin:$PATH; export PATH 
+LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib; export LD_LIBRARY_PATH 
+CLASSPATH=$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib; export CLASSPATH
+
+
+Login as the oracle user and add the lines at the end of the ".bash_profile" file
+
+# Oracle Settings 
+TMP=/tmp; export TMP 
+TMPDIR=$TMP; export TMPDIR 
+ORACLE_HOSTNAME=rac1.localdomain; export ORACLE_HOSTNAME 
+ORACLE_UNQNAME=tgsin; export ORACLE_UNQNAME 
+ORACLE_BASE=/u01/app/oracle; export ORACLE_BASE 
+ORACLE_HOME=$ORACLE_BASE/product/12.1.0/db_1; export ORACLE_HOME 
+ORACLE_SID=tgsin1; export ORACLE_SID 
+PATH=/usr/sbin:$PATH; export PATH 
+PATH=$ORACLE_HOME/bin:$PATH; export PATH 
+LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib; export LD_LIBRARY_PATH 
+CLASSPATH=$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib; export CLASSPATH 
+
+
+
+
+		
