@@ -1,0 +1,288 @@
+AGyQ22Tf AGyQ22Tf CREATE TABLE, CREATE VIEW, CREATE SEQUENCE, CREATE SYNONYM, CREATE CLUSTER, CREATE DATABASE LINK,CREATE MATERIALIZED VIEW, ALTER SESSION
+
+select dbms_metadata.get_ddl('TABLE','LBCA_TRANS_DISCT_WRK_T','LBMKTDM') from dual;
+
+COLUMN sid FORMAT 999
+COLUMN serial# FORMAT 9999999
+COLUMN machine FORMAT A30
+COLUMN progress_pct FORMAT 99999999.00
+COLUMN elapsed FORMAT A10
+COLUMN remaining FORMAT A10
+
+SELECT s.sid,
+       s.serial#,
+       s.machine,
+       ROUND(sl.elapsed_seconds/60) || ':' || MOD(sl.elapsed_seconds,60) elapsed,
+       ROUND(sl.time_remaining/60) || ':' || MOD(sl.time_remaining,60) remaining,
+       ROUND(sl.sofar/sl.totalwork*100, 2) progress_pct
+FROM   v$session s,
+       v$session_longops sl
+WHERE  s.sid     = sl.sid
+AND    s.serial# = sl.serial#
+and s.status='ACTIVE';
+and s.username='ASCEDLSTG';
+
+select a.sid,a.program,a.status,b.sql_text,a.sql_id from v$session a, v$sqltext b
+where a.sql_hash_value = b.hash_value
+and a.sid=&sid
+order by a.sid,hash_value,piece;
+
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR('gt2n8uwx2c4qt')); 
+
+DECLARE
+  l_sql_tune_task_id  VARCHAR2(100);
+BEGIN
+  l_sql_tune_task_id := DBMS_SQLTUNE.create_tuning_task (
+                          sql_id      => '77c8qw0ss74f3',
+                          scope       => DBMS_SQLTUNE.scope_comprehensive,
+                          time_limit  => 500,
+                          task_name   => '77c8qw0ss74f3_tuning_task12',
+                          description => 'Tuning task1 for statement 77c8qw0ss74f3');
+  DBMS_OUTPUT.put_line('l_sql_tune_task_id: ' || l_sql_tune_task_id);
+END;
+
+EXEC DBMS_SQLTUNE.execute_tuning_task(task_name => '77c8qw0ss74f3_tuning_task12');
+
+set long 65536
+set longchunksize 65536
+set linesize 100
+select dbms_sqltune.report_tuning_task ('77c8qw0ss74f3_tuning_task12') from dual;
+ 
+execute dbms_stats.gather_table_stats(ownname => 'ASCEDLSTG', tabname =>'LBCA_TRANSACTION_DISCOUNT_WRK', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt => 'FOR ALL COLUMNS SIZE AUTO');
+
+execute dbms_stats.gather_table_stats(ownname => 'LBMKTDM', tabname =>'CUSTOMER_EMAIL', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt => 'FOR ALL COLUMNS SIZE AUTO');
+
+execute dbms_stats.gather_table_stats(ownname => 'LBMKTDM', tabname =>'CUSTOMER_PREFERENCE_TMP', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt => 'FOR ALL COLUMNS SIZE AUTO');
+
+create index LBMKTDM.IDX$$_037E0001 on LBMKTDM.CUSTOMER_PREFERENCE_TMP(TO_CHAR("CUSTOMER_ID"),"PREFERENCE_CHANNEL_ID");
+create index LBMKTDM.IDX$$_037E0002 on LBMKTDM.CUSTOMER_PREFERENCE_TMP("PREFERENCE_CHANNEL_ID",TO_CHAR("CUSTOMER_ID"));
+
+execute dbms_stats.gather_table_stats(ownname => 'CAMKTDM', tabname =>'TRANSACTION_DISCOUNT', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt => 'FOR ALL COLUMNS SIZE AUTO');
+
+INSERT /*+ APPEND */ INTO lbmktdm.TRANSACTION_DISCOUNT 
+SELECT 
+to_number(trim(id_cust)),
+to_number(trim(id_store)),
+TO_DATE(SUBSTR(da_trns,1,10),'YYYY-MM-DD'),
+to_number(trim(id_register)),
+to_number(trim(nu_trns)),
+to_number(trim(nu_trns_rcd_seq)),
+to_number(trim(nu_trns_dtl_seq)),
+cd_trns_type       ,
+substr(cd_disc_type,1,1)       ,
+id_sku             ,
+id_coupon          ,
+to_number(trim(am_disc)),
+in_disc_reason     ,
+to_number(trim(id_deal)),
+to_number(trim(id_pos_event)),
+to_number(trim(cd_disc_subreason)),
+TO_CHAR(TO_DATE(SUBSTR(DA_TRNS,1,10),'YYYY-mm-dd'),'MMYYYY') 
+FROM ascedlstg.lbca_transaction_discount_wrk WHERE to_number(BRAND_CODE) = 7;
+
+create index ascedlstg.tdw_brand_idx on ascedlstg.lbca_transaction_discount_wrk(brand_code);
+
+execute dbms_stats.gather_table_stats(ownname => 'LBMKTDM', tabname =>'TRANSACTION_DISCOUNT', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, method_opt => 'FOR ALL COLUMNS SIZE AUTO');
+
+execute dbms_stats.gather_index_stats(ownname => 'ASCEDLSTG', indname =>'TDW_BRAND_IDX1', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, degree => 6);
+
+create index ascedlstg.tdw_brand_idx on ascedlstg.lbca_transaction_discount_wrk(brand_code);
+
+drop index ascedlstg.tdw_brand_idx1;
+
+CREATE INDEX ascedlstg.tdw_brand_idx1
+   ON ascedlstg.lbca_transaction_discount_wrk(to_number(brand_code))
+PARALLEL 4
+NOLOGGING;
+
+SELECT SUBSTR(sql_text, 1, 60) "SQL Text", rows_processed "Total Rows Processed",
+       ROUND((SYSDATE - TO_DATE(first_load_time, 'yyyy-mm-dd hh24:mi:ss')) * 24 * 60, 1) "Total Time (Min)",
+       TRUNC(rows_processed /((SYSDATE - TO_DATE(first_load_time, 'yyyy-mm-dd hh24:mi:ss')) * 24 * 60)) "Rows/Min",
+       TRUNC(rows_processed /((SYSDATE - TO_DATE(first_load_time, 'yyyy-mm-dd hh24:mi:ss')) * 24 * 60 * 60)) "Rows/Sec"
+FROM SYS.v_$sqlarea  WHERE sql_text LIKE 'INSERT INTO%' AND open_versions > 0 AND rows_processed > 0;
+
+set pages60
+select s.sid, s.serial#, p.spid, s.username, s.program,
+t.xidusn, t.used_ublk, t.used_urec, sa.sql_text from
+v$process p,v$session s, v$sqlarea sa, v$transaction t
+where s.paddr=p.addr
+and s.taddr=t.addr
+and s.sql_address=sa.address(+)
+and s.sql_hash_value=sa.hash_value(+)
+and s.sid=832
+order by s.sid
+
+column tablespace format a20;
+column sum_in_mb format 999999.99;
+select tablespace_name tablespace, status, sum(bytes)/1024/1024 sum_in_mb, count(*) counts from dba_undo_extents group by tablespace_name, status order by 1,2;
+
+SELECT b.INST_ID,a.sid, a.username, a.status,b.xidusn, b.used_urec, b.used_ublk,flag,sql_id,b.used_ublk*8/1024/1024 undousage  FROM gv$session a, gv$transaction b WHERE a.saddr(+) = b.ses_addr and a.INST_ID(+) = b.INST_ID ;
+
+set time on
+set timing on
+spool test.log
+select to_char(sysdate,'YYYY-MM-DD HH24:MI:SS') from dual;
+
+INSERT /*+ APPEND */ INTO lbmktdm.TRANSACTION_DISCOUNT
+SELECT
+to_number(trim(id_cust)),
+to_number(trim(id_store)),
+TO_DATE(SUBSTR(da_trns,1,10),'YYYY-MM-DD'),
+to_number(trim(id_register)),
+to_number(trim(nu_trns)),
+to_number(trim(nu_trns_rcd_seq)),
+to_number(trim(nu_trns_dtl_seq)),
+cd_trns_type       ,
+substr(cd_disc_type,1,1)       ,
+id_sku             ,
+id_coupon          ,
+to_number(trim(am_disc)),
+in_disc_reason     ,
+to_number(trim(id_deal)),
+to_number(trim(id_pos_event)),
+to_number(trim(cd_disc_subreason)),
+TO_CHAR(TO_DATE(SUBSTR(DA_TRNS,1,10),'YYYY-mm-dd'),'MMYYYY')
+FROM ascedlstg.lbca_transaction_discount_wrk WHERE to_number(BRAND_CODE) = 7;
+
+commit;
+
+spool off
+
+exit;
+
+
+CREATE TABLE t1 (
+  id           NUMBER,
+  created_date DATE
+)
+PARTITION BY RANGE (created_date)
+INTERVAL (NUMTOYMINTERVAL(1,'MONTH'))
+(PARTITION part_01 VALUES LESS THAN (TO_DATE('01/10/2014', 'DD/MM/YYYY')) TABLESPACE users);
+
+
+
+
+select a.object_name object_name,a.owner owner,b.session_id,b.oracle_username oracleusername,b.process,b.locked_mode,b.OS_USER_NAME from dba_objects a,v$locked_object b where a.object_id=b.object_id
+
+
+
+alter system kill session '&sid,&serial' immediate;
+
+---------------------------------------
+
+CREATE TABLE "LBMKTDM"."PRA_TRANSACTION_DISCOUNT"
+   (    "CUSTOMER_ID" NUMBER(20,0) NOT NULL ENABLE,
+        "STORE_ID" NUMBER(5,0) NOT NULL ENABLE,
+        "TRANSACTION_DATE" DATE NOT NULL ENABLE,
+        "REGISTER_ID" NUMBER(3,0) NOT NULL ENABLE,
+        "TRANSACTION_NUMBER" NUMBER(5,0) NOT NULL ENABLE,
+        "TRANSACTION_RECORD_NUMBER" NUMBER(5,0),
+        "TRANSACTION_DETAIL_NUMBER" NUMBER(5,0),
+        "TRANSACTION_TYPE_CODE" VARCHAR2(2),
+        "TRANSACTION_DISCOUNT_CODE" VARCHAR2(1),
+        "SKU_ID" VARCHAR2(12),
+        "COUPON_ID" VARCHAR2(20),
+        "DISCOUNT_AMOUNT" NUMBER(7,2),
+        "DISCOUNT_REASON_CODE" VARCHAR2(2),
+        "DEAL_ID" NUMBER(5,0),
+        "POS_EVENT_ID" NUMBER(5,0),
+        "DISCOUNT_SUBREASON_CODE" NUMBER(3,0),
+        "PARTITION_COLUMN" VARCHAR2(6)
+   )
+PARTITION BY RANGE (TRANSACTION_DATE)
+INTERVAL(NUMTOYMINTERVAL(1, 'MONTH'))
+(PARTITION BASE_PART VALUES LESS THAN (TO_DATE('1-10-2015','DD-MM-YYYY')));
+
+
+
+
+
+ CREATE TABLE "LBMKTDM"."TRANSACTION_DISCOUNT"
+   (    "CUSTOMER_ID" NUMBER(20,0) NOT NULL ENABLE,
+        "STORE_ID" NUMBER(5,0) NOT NULL ENABLE,
+        "TRANSACTION_DATE" DATE NOT NULL ENABLE,
+        "REGISTER_ID" NUMBER(3,0) NOT NULL ENABLE,
+        "TRANSACTION_NUMBER" NUMBER(5,0) NOT NULL ENABLE,
+        "TRANSACTION_RECORD_NUMBER" NUMBER(5,0),
+        "TRANSACTION_DETAIL_NUMBER" NUMBER(5,0),
+        "TRANSACTION_TYPE_CODE" VARCHAR2(2),
+        "TRANSACTION_DISCOUNT_CODE" VARCHAR2(1),
+        "SKU_ID" VARCHAR2(12),
+        "COUPON_ID" VARCHAR2(20),
+        "DISCOUNT_AMOUNT" NUMBER(7,2),
+        "DISCOUNT_REASON_CODE" VARCHAR2(2),
+        "DEAL_ID" NUMBER(5,0),
+        "POS_EVENT_ID" NUMBER(5,0),
+        "DISCOUNT_SUBREASON_CODE" NUMBER(3,0),
+        "PARTITION_COLUMN" VARCHAR2(6)
+   ) PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255
+  STORAGE(
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "UNICALBDATA"
+  PARTITION BY RANGE ("TRANSACTION_DATE") INTERVAL (NUMTOYMINTERVAL(1, 'MONTH'))
+ (PARTITION "BASE_PART"  VALUES LESS THAN (TO_DATE(' 2015-11-01 00:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')) SEGMENT CREATION DEFERRED
+  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255
+ NOCOMPRESS LOGGING
+  STORAGE(
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "UNICALBDATA" )
+
+
+  CREATE TABLE "CAMKTDM"."TRANSACTION_DETAIL"
+   (    "CUSTOMER_ID" NUMBER(20,0) NOT NULL ENABLE,
+        "STORE_ID" NUMBER(5,0) NOT NULL ENABLE,
+        "TRANSACTION_DATE" DATE NOT NULL ENABLE,
+        "REGISTER_ID" NUMBER(3,0) NOT NULL ENABLE,
+        "TRANSACTION_NUMBER" NUMBER(5,0) NOT NULL ENABLE,
+        "TRANSACTION_TYPE_CODE" VARCHAR2(2),
+        "SKU_ID" VARCHAR2(12),
+        "SIZE_ID" NUMBER(5,0),
+        "RETAIL_AMOUNT" NUMBER(7,2),
+        "RETAIL_COST" NUMBER(7,2),
+        "RETAIL_ORIGINAL_AMOUNT" NUMBER(7,2),
+        "ITEM_QUANTITY" NUMBER(5,0),
+        "TRANSACTION_DETAIL_NUMBER" NUMBER(5,0),
+        "TRANSACTION_RECORD_NUMBER" NUMBER(5,0),
+        "TAXABLE_FLAG" VARCHAR2(1),
+        "RETURN_REASON_CODE" VARCHAR2(2),
+        "MARKDOWN_AMOUNT" NUMBER(7,2),
+        "PERMANENT_MARKDOWN_CODE" VARCHAR2(1),
+        "SALES_PERSON_ID" NUMBER(10,0),
+        "SCANNED_FLAG" VARCHAR2(1),
+        "STYLE_LOCATION_FLAG" VARCHAR2(1),
+        "RETAIL_CURRENT_AMOUNT" NUMBER(7,2),
+        "STORE_OWNER_ID" NUMBER(5,0),
+        "ITEM_OWNER_ID" VARCHAR2(7),
+        "OVERSEAS_ITEM_FLAG" VARCHAR2(1),
+        "CUSTOMER_TAX_PAID" NUMBER(7,2),
+        "COMPANY_TAX_OWED" NUMBER(7,2),
+        "SELECTION_STORE_ID" NUMBER(5,0),
+        "COMMISSION_AMOUNT" NUMBER(7,2),
+        "PARTITION_COLUMN" NUMBER(6,0)
+   ) PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255
+  STORAGE(
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "UNICACADATA"
+  PARTITION BY RANGE ("TRANSACTION_DATE") INTERVAL (NUMTOYMINTERVAL(1, 'MONTH'))
+ (PARTITION "BASE_PART"  VALUES LESS THAN (TO_DATE(' 2015-11-01 00:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')) SEGMENT CREATION DEFERRED
+  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255
+ NOCOMPRESS LOGGING
+  STORAGE(
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "UNICACADATA" )
+
+
+  CREATE UNIQUE INDEX "LBMKTDM"."PK_CUSTOMER_MASTER" ON "LBMKTDM"."CUSTOMER_MASTER" ("CUSTOMER_ID")
+  PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS
+  STORAGE(INITIAL 81920 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "UNICALBDATA"
+
+
+
+SELECT MONTHS_BETWEEN 
+   (TO_DATE('11-01-2015','MM-DD-YYYY'),
+    TO_DATE('12-01-2018','MM-DD-YYYY') ) "Months"
+    FROM DUAL;
+
