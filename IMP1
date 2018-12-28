@@ -1,0 +1,199 @@
+tawaL86
+NtawaL86
+
+insert into LBCA_TRANSACTION_DISCOUNT_WRK_P  select * from LBCA_TRANSACTION_DISCOUNT_WRK;
+
+create table TRANSACTION_DISCOUNT_PAR as select * from TRANSACTION_DISCOUNT where 1=0;
+
+
+asckmurugesan
+
+
+
+tQ77W3Nb#
+
+BEGIN 
+dbms_stats.gather_index_stats(ownname => 'ASCEDLSTG', indname =>'TDEW_BRAND_IDX', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, degree => 6);
+END;
+
+alter table LBCA_TRANSACTION_DISCOUNT_WRK_P add partition BY LIST (brand_code)
+(
+  PARTITION others VALUES (DEFAULT)
+)
+
+alter table ascedlstg.LBCA_TRANSACTION_DISCOUNT_WRK_P add partition lb values('7');
+
+
+
+select segment_name,segment_type,bytes/1024/1024/1024 gb from dba_segments where owner='ASCEDLSTG' and segment_name not like 'BIN%';
+
+
+ select table_name,owner,to_char(last_analyzed, 'dd-mon-yyyy hh24:mi:ss')  from dba_tables where table_name='LBCA_TRANSACTION_DISCOUNT_WRK_P';
+
+SELECT table_name, partition_name, subpartition_name, num_rows
+FROM dba_tab_partitions;
+
+EXEC DBMS_STATS.gather_table_stats('ASCEDLSTG','LBCA_TRANS_DISCT_WRK_TEST', estimate_percent =>DBMS_STATS.AUTO_SAMPLE_SIZE, degree => 6);
+
+
+
+COLUMN sid FORMAT 999
+COLUMN serial# FORMAT 9999999
+COLUMN machine FORMAT A30
+COLUMN progress_pct FORMAT 99999999.00
+COLUMN elapsed FORMAT A10
+COLUMN remaining FORMAT A10
+
+SELECT s.sid,
+       s.serial#,
+       s.machine,
+       ROUND(sl.elapsed_seconds/60) || ':' || MOD(sl.elapsed_seconds,60) elapsed,
+       ROUND(sl.time_remaining/60) || ':' || MOD(sl.time_remaining,60) remaining,
+       ROUND(sl.sofar/sl.totalwork*100, 2) progress_pct
+FROM   v$session s,
+       v$session_longops sl
+WHERE  s.sid     = sl.sid
+AND    s.serial# = sl.serial#
+order by progress_pct desc;
+
+
+col sql_text form a80
+set lines 120
+select sql_text from gv$sqltext where hash_value=
+(select sql_hash_value from gv$session where sid=&sid) 
+order by piece
+/
+
+
+
+
+SELECT O.OBJECT_NAME, S.SID, S.SERIAL#,S.LOGON_TIME,SQ.SQL_FULLTEXT 
+FROM V$LOCKED_OBJECT L, DBA_OBJECTS O, V$SESSION S, 
+V$PROCESS P, V$SQL SQ 
+WHERE L.OBJECT_ID = O.OBJECT_ID 
+AND L.SESSION_ID = S.SID AND S.PADDR = P.ADDR 
+AND S.SQL_ADDRESS = SQ.ADDRESS;
+
+
+
+SELECT
+    O.OBJECT_NAME,
+    S.SID,
+    S.SERIAL#,
+    P.SPID,
+    S.PROGRAM,
+    SQ.SQL_FULLTEXT,
+    S.LOGON_TIME
+FROM
+    V$LOCKED_OBJECT L,
+    DBA_OBJECTS O,
+    V$SESSION S,
+    V$PROCESS P,
+    V$SQL SQ
+WHERE
+    L.OBJECT_ID = O.OBJECT_ID
+    AND L.SESSION_ID = S.SID
+    AND S.PADDR = P.ADDR
+    AND S.SQL_ADDRESS = SQ.ADDRESS;
+
+
+
+SELECT
+sid,
+serial#,
+ROUND( ( sofar/totalwork ), 4 ) * 100 Per_Com,
+CEIL( time_remaining / 60 ) Remaining,
+FLOOR( elapsed_seconds / 60 ) Time_Spent
+FROM v$session_longops
+WHERE sofar != totalwork;
+
+select
+  b.sid,
+  b.value,
+  a.name
+from
+  v$statname a,
+  v$sesstat b
+where
+  a.statistic# =  b.statistic# 
+and
+  lower(a.name) = lower ('undo change vector size')
+and 
+b.sid =60;
+
+
+
+
+create table camktdm.CUSTOMER_PREFERENCE_TMP as select * from lbmktdm.CUSTOMER_PREFERENCE_TMP where 1=0;
+
+grant 
+
+
+
+
+
+
+CREATE UNIQUE INDEX "LBMKTDM"."TRANSACTION_HEADER_IDX" ON "LBMKTDM"."TRANSACTION_HEADER"("CUSTOMER_ID","STORE_ID","TRANSACTION_DATE","REGISTER_ID","TRANSACTION_NUMBER")
+  PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS
+  STORAGE(INITIAL 81920 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "UNICALBINDEX"
+
+
+
+CREATE INDEX "CAMKTDM"."TRANSACTION_DETAIL_IDX" ON "CAMKTDM"."TRANSACTION_DETAIL"("CUSTOMER_ID","STORE_ID","TRANSACTION_DATE","REGISTER_ID","TRANSACTION_NUMBER")
+  PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS
+  STORAGE(INITIAL 81920 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
+  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "UNICACAINDEX" 
+
+
+select
+   s.sid, 
+   s.serial#, 
+   s.username, 
+   u.segment_name, 
+   count(u.extent_id) "Extent Count", 
+   t.used_ublk, 
+   t.used_urec, 
+   s.program
+from
+   v$session        s, 
+   v$transaction    t, 
+   dba_undo_extents u
+where
+   s.taddr = t.addr 
+and 
+   u.segment_name like '_SYSSMU'||t.xidusn||'_%$' 
+and 
+   u.status = 'ACTIVE'
+group by
+   s.sid, 
+   s.serial#, 
+   s.username, 
+   u.segment_name, 
+   t.used_ublk, 
+   t.used_urec, 
+   s.program
+order by
+   t.used_ublk desc, 
+   t.used_urec desc, 
+   s.sid, 
+   s.serial#, 
+   s.username, 
+   s.program;
+
+ select to_char(last_analyzed,'YYYY-MM-DD HH24:MI:SS'),index_name,table_name from dba_indexes where table_name ='LBCA_TRANSACTION_DISCOUNT_WRK'
+
+ select stale_stats from dba_ind_statistics where table_name='LBCA_TRANSACTION_DISCOUNT_WRK';
+
+
+select partition_name,num_rows,table_name FROM dba_tab_partitions where table_name='TRANSACTION_HEADER';
+
+
+alter table ascedlstg.TEST_STG_DISCOUNT_LB modify (ID_CUST NUMBER(20));
+
+
+select dbms_metadata.get_ddl('TABLE','LBCA_TRANSACTION_DISCOUNT_WRK','ASCEDLSTG') from dual;
