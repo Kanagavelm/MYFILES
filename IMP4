@@ -1,0 +1,83 @@
+ CREATE TABLE "ASCEDLSTG"."LBCA_TRANSACTION_DISCOUNT_WRK"
+   (    "ID_CUST" VARCHAR2(256),
+        "BRAND_CODE" VARCHAR2(256),
+        "ID_STORE" VARCHAR2(256),
+        "DA_TRNS" VARCHAR2(256),
+        "ID_REGISTER" VARCHAR2(256),
+        "NU_TRNS" VARCHAR2(256),
+        "NU_TRNS_RCD_SEQ" VARCHAR2(256),
+        "NU_TRNS_DTL_SEQ" VARCHAR2(256),
+        "CD_TRNS_TYPE" VARCHAR2(256),
+        "CD_DISC_TYPE" VARCHAR2(256),
+        "ID_SKU" VARCHAR2(256),
+        "ID_COUPON" VARCHAR2(256),
+        "AM_DISC" VARCHAR2(256),
+        "IN_DISC_REASON" VARCHAR2(256),
+        "IN_DISC_METHOD" VARCHAR2(256),
+        "ID_DEAL" VARCHAR2(256),
+        "ID_POS_EVENT" VARCHAR2(256),
+        "CD_DISC_SUBREASON" VARCHAR2(256),
+        "CD_PARENT_TABLE" VARCHAR2(256)
+   ) 
+
+
+
+
+
+
+
+
+
+PARTITION BY LIST(BRAND_CODE)
+  SUBPARTITION BY RANGE(TRANSACTION_DATE)
+(
+  PARTITION LB_DISCOUNT VALUES('7')
+    (
+      SUBPARTITION europe_2011 
+        VALUES LESS THAN('2012-Jan-01'),
+      SUBPARTITION europe_2012 
+        VALUES LESS THAN('2013-Jan-01')
+    )
+ );
+
+
+INTERVAL (NUMTOYMINTERVAL(1, 'MONTH'))
+
+ (PARTITION "BASE_PART"  VALUES LESS THAN (TO_DATE(' 2015-11-01 00:00:00', 'SYYY
+Y-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN'))
+
+
+
+
+
+select segment_name , tablespace_name, bytes/1024/1024 from dba_segments where segment_type='table';
+
+alter session enable parallel dml;
+insert /*+ parallel (emp_big,4,1) */
+  into emp_big select * from emp;
+commit;
+alter session disable parallel dml;
+
+
+https://www.dummies.com/programming/databases/how-to-use-the-database-configuration-assistant-dbca-to-create-databases-in-oracle-12c/
+
+
+SELECT to_char(CREATED,'yyyy-mm-dd hh24:mi:ss') FROM ALL_OBJECTS WHERE OWNER='LBMKTDM' AND OBJECT_NAME ='DMRS_TSDP_SUB_POLICIES';
+
+SELECT OBJECT_NAME,to_char(created,'yyyy-mm-dd hh24:mi:ss'),to_char(last_ddl_time,'yyyy-mm-dd hh24:mi:ss') FROM dba_objects WHERE object_type = 'TABLE' AND OBJECT_NAME= 'LBCA_GEO_LOCATION_WRK_TMP' ORDER BY last_ddl_time DESC
+        
+SELECT SCN_TO_TIMESTAMP('99970672') from dual; LBCA_GEO_LOCATION_WRK_TMP;
+SELECT MAX(SCN_TO_TIMESTAMP(ORA_ROWSCN)) from ascedlstg.LBCA_GEO_LOCATION_WRK_TMP;
+select max(ora_rowscn) from ascedlstg.LBCA_GEO_LOCATION_WRK_TMP;
+
+select * from  v$log_history where '99970672' between FIRST_CHANGE# and NEXT_CHANGE#;
+
+
+
+SQL> select to_char(FIRST_TIME,'yyyy-mm-dd hh24:mi:ss'),to_char(RESETLOGS_TIME,'yyyy-mm-dd hh24:mi:ss') from  v$log_history where '99970672' between FIRST_CHANGE# and NEXT_CHANGE#;
+
+TO_CHAR(FIRST_TIME, TO_CHAR(RESETLOGS_T
+------------------- -------------------
+2018-12-18 05:28:34 2018-10-25 16:02:24
+
+SELECT CREATORNAME FROM DBC.TABLES WHERE TABLENAME = 'DMRS_TSDP_SUB_POLICIES';
